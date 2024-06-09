@@ -9,7 +9,7 @@ spring:
         registration:
           keycloak:
             client-id: hypercore
-            client-secret: JNB8wDVT8pijXIojIZjQjdyayZoSVeKX
+            client-secret: DOoH7QgR067e0znlXwrVg3vgFbEVD9cW
 
 
 server:

@@ -5,13 +5,13 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.proselyte.individualsapi.config.KeycloakConfig;
 import net.proselyte.individualsapi.dto.*;
 import net.proselyte.individualsapi.exception.NotAuthorizedException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -30,14 +30,7 @@ public class KeycloakService {
     private final Keycloak keycloak;
     private final WebClient webClient;
 
-    @Value("${keycloak.realm}")
-    private String realm;
-    @Value("${spring.security.oauth2.client.registration.keycloak.client-secret}")
-    private String clientSecret;
-    @Value("${spring.security.oauth2.client.registration.keycloak.client-id}")
-    private String clientId;
-    @Value("${keycloak.server-url}")
-    private String keycloakServerUrl;
+    private final KeycloakConfig keycloakConfig;
 
     public Mono<UserDto> register(CreateUserRequest request) {
         CredentialRepresentation credential = createPasswordCredentials(request.password());
@@ -63,14 +56,15 @@ public class KeycloakService {
 
     public Mono<KeycloakLoginResponse> login(AuthRequest request) {
         return webClient.post()
-                .uri("%s/realms/hypercore/protocol/openid-connect/token".formatted(keycloakServerUrl))
+                .uri("%s/realms/hypercore/protocol/openid-connect/token".formatted(keycloakConfig.getServerUrl()))
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(BodyInserters.fromFormData("username", request.getUsername())
                         .with("password", request.getPassword())
                         .with("grant_type", "password")
-                        .with("client_id", clientId)
-                        .with("client_secret", clientSecret))
+                        .with("client_id", keycloakConfig.getClientId())
+                        .with("client_secret", keycloakConfig.getClientSecret()))
                 .exchangeToMono(clientResponse -> {
+                    System.out.println(clientResponse.statusCode());
                     if (clientResponse.statusCode().value() == HttpStatus.OK.value()) {
                         return clientResponse.bodyToMono(KeycloakLoginResponse.class);
                     } else {
@@ -97,7 +91,7 @@ public class KeycloakService {
     }
 
     private UsersResource getUsersResource() {
-        return keycloak.realm(realm).users();
+        return keycloak.realm(keycloakConfig.getRealm()).users();
     }
 
     private CredentialRepresentation createPasswordCredentials(String password) {
