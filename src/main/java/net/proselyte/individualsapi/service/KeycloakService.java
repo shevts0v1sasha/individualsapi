@@ -1,14 +1,13 @@
 package net.proselyte.individualsapi.service;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.proselyte.individualsapi.config.KeycloakConfig;
 import net.proselyte.individualsapi.dto.*;
+import net.proselyte.individualsapi.exception.KeycloakBadRequestException;
+import net.proselyte.individualsapi.exception.KeycloakUserNotFoundException;
 import net.proselyte.individualsapi.exception.NotAuthorizedException;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -27,10 +26,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class KeycloakService {
 
-    private final Keycloak keycloak;
     private final WebClient webClient;
 
     private final KeycloakConfig keycloakConfig;
+    private final UsersResource usersResource;
 
     public Mono<UserDto> register(CreateUserRequest request) {
         CredentialRepresentation credential = createPasswordCredentials(request.password());
@@ -42,14 +41,13 @@ public class KeycloakService {
         user.setEmailVerified(true);
         user.setCredentials(Collections.singletonList(credential));
         user.setEnabled(true);
-        UsersResource usersResource = getUsersResource();
 
         try (Response response = usersResource.create(user)) {
             if (response.getStatus() == HttpStatus.CREATED.value()) {
                 return getUserByUsername(request.username());
             } else {
                 KeycloakErrorDto keycloakErrorDto = response.readEntity(KeycloakErrorDto.class);
-                throw new BadRequestException(keycloakErrorDto.errorMessage());
+                throw new KeycloakBadRequestException(keycloakErrorDto.errorMessage());
             }
         }
     }
@@ -74,7 +72,6 @@ public class KeycloakService {
     }
 
     public Mono<UserDto> getUserByUsername(String username) {
-        UsersResource usersResource = getUsersResource();
         List<UserRepresentation> search = usersResource.search(username);
         if (search.size() == 1) {
             UserRepresentation searchingUser = search.get(0);
@@ -87,11 +84,7 @@ public class KeycloakService {
                             .email(searchingUser.getEmail())
                     .build());
         }
-        throw new NotFoundException("User with username=%s not found".formatted(username));
-    }
-
-    private UsersResource getUsersResource() {
-        return keycloak.realm(keycloakConfig.getRealm()).users();
+        throw new KeycloakUserNotFoundException("User with username=%s not found".formatted(username));
     }
 
     private CredentialRepresentation createPasswordCredentials(String password) {

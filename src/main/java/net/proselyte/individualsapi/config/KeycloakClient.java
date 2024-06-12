@@ -3,20 +3,15 @@ package net.proselyte.individualsapi.config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("prod")
 public class KeycloakClient {
 
-    @Autowired
-    private KeycloakConfig keycloakConfig;
-
     @Bean
-    public Keycloak keycloak() {
+    public Keycloak keycloak(KeycloakConfig keycloakConfig) {
         return KeycloakBuilder.builder()
                 .serverUrl(keycloakConfig.getServerUrl())
                 .realm(keycloakConfig.getRealm())
@@ -26,5 +21,11 @@ public class KeycloakClient {
                 .username(keycloakConfig.getUserName())
                 .password(keycloakConfig.getPassword())
                 .build();
+    }
+
+    @Bean
+    public UsersResource usersResource(KeycloakConfig config,
+                                       Keycloak keycloak) {
+        return keycloak.realm(config.getRealm()).users();
     }
 }
