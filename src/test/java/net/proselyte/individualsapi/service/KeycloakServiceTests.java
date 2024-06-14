@@ -1,9 +1,13 @@
 package net.proselyte.individualsapi.service;
 
+import net.proselyte.individualsapi.config.KeycloakConfig;
+import net.proselyte.individualsapi.dto.AuthRequest;
 import net.proselyte.individualsapi.dto.CreateUserRequest;
+import net.proselyte.individualsapi.dto.KeycloakLoginResponse;
 import net.proselyte.individualsapi.dto.UserDto;
 import net.proselyte.individualsapi.exception.KeycloakBadRequestException;
 import net.proselyte.individualsapi.exception.KeycloakUserNotFoundException;
+import net.proselyte.individualsapi.exception.NotAuthorizedException;
 import net.proselyte.individualsapi.utils.DataUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +19,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +38,14 @@ public class KeycloakServiceTests {
 
     @Mock
     private UsersResource usersResource;
+    @Mock
+    private WebClient webClient;
+    @Mock
+    private WebClient.RequestBodyUriSpec requestBodyUriSpec;
+    @Mock
+    private WebClient.RequestHeadersSpec requestHeadersSpec;
+    @Mock
+    private KeycloakConfig keycloakConfig;
 
     @InjectMocks
     private KeycloakService keycloakService;
@@ -117,7 +131,54 @@ public class KeycloakServiceTests {
 
         //when
         assertThrows(KeycloakUserNotFoundException.class, () -> keycloakService.getUserByUsername(username));
+    }
 
+    @Test
+    @DisplayName("Login functionality")
+    public void givenAuthRequest_whenLogin_thenTokenReturned() {
+        //given
+        String token = UUID.randomUUID().toString();
+        BDDMockito.given(webClient.post())
+                .willReturn(requestBodyUriSpec);
+        BDDMockito.given(requestBodyUriSpec.uri(anyString()))
+                .willReturn(requestBodyUriSpec);
+        BDDMockito.given(requestBodyUriSpec.contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .willReturn(requestBodyUriSpec);
+        BDDMockito.given(requestBodyUriSpec.body(any()))
+                .willReturn(requestHeadersSpec);
+        BDDMockito.given(requestHeadersSpec.exchangeToMono(any()))
+                .willReturn(Mono.just(new KeycloakLoginResponse(
+                        token, 1000, 1000, token, "Bearer ")));
+        BDDMockito.given(keycloakConfig.getServerUrl())
+                .willReturn("");
+        AuthRequest authRequest = new AuthRequest("Spider-Man", "secretpass");
+        //when
+        KeycloakLoginResponse login = keycloakService.login(authRequest).block();
         //then
+        assertThat(login.getAccessToken()).isEqualTo(token);
+        assertThat(login.getRefreshToken()).isEqualTo(token);
+        assertThat(login.getExpiresIn()).isEqualTo(1000);
+        assertThat(login.getRefreshExpiresIn()).isEqualTo(1000);
+    }
+
+    @Test
+    @DisplayName("Login with wrong login/password functionality")
+    public void givenBadAuthRequest_whenLogin_thenUnauthorizedExceptionThrown() {
+        //given
+        BDDMockito.given(keycloakConfig.getServerUrl())
+                .willReturn("");
+        BDDMockito.given(webClient.post())
+                .willReturn(requestBodyUriSpec);
+        BDDMockito.given(requestBodyUriSpec.uri(anyString()))
+                .willReturn(requestBodyUriSpec);
+        BDDMockito.given(requestBodyUriSpec.contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .willReturn(requestBodyUriSpec);
+        BDDMockito.given(requestBodyUriSpec.body(any()))
+                .willReturn(requestHeadersSpec);
+        BDDMockito.given(requestHeadersSpec.exchangeToMono(any()))
+                .willReturn(Mono.error(new NotAuthorizedException("Wrong username or password")));
+        AuthRequest authRequest = new AuthRequest("Spider-Man", "secretpass");
+        //when
+        assertThrows(NotAuthorizedException.class, () -> keycloakService.login(authRequest).block());
     }
 }
