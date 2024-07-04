@@ -15,7 +15,11 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 public class SecurityConfig {
 
     private final JwtAuthConverter jwtAuthConverter;
-    private final String[] PUBLIC_ENDPOINTS = {"/api/v1/auth/register", "/api/v1/auth/login"};
+    private final String[] PUBLIC_ENDPOINTS = {
+            "/api/v1/auth/individuals/register",
+            "/api/v1/auth/individuals/login",
+            "/api/v1/auth/login"
+    };
 
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {

@@ -31,20 +31,20 @@ public class KeycloakService {
     private final KeycloakConfig keycloakConfig;
     private final UsersResource usersResource;
 
-    public Mono<UserDto> register(CreateUserRequest request) {
-        CredentialRepresentation credential = createPasswordCredentials(request.password());
+    public Mono<IndividualDto> register(String username, String password, String firstName, String lastName, String email) {
+        CredentialRepresentation credential = createPasswordCredentials(password);
         UserRepresentation user = new UserRepresentation();
-        user.setUsername(request.username());
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setEmail(request.email());
+        user.setUsername(username);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
         user.setEmailVerified(true);
         user.setCredentials(Collections.singletonList(credential));
         user.setEnabled(true);
 
         try (Response response = usersResource.create(user)) {
             if (response.getStatus() == HttpStatus.CREATED.value()) {
-                return getUserByUsername(request.username());
+                return getUserByUsername(username);
             } else {
                 KeycloakErrorDto keycloakErrorDto = response.readEntity(KeycloakErrorDto.class);
                 throw new KeycloakBadRequestException(keycloakErrorDto.errorMessage());
@@ -71,12 +71,12 @@ public class KeycloakService {
                 });
     }
 
-    public Mono<UserDto> getUserByUsername(String username) {
+    public Mono<IndividualDto> getUserByUsername(String username) {
         List<UserRepresentation> search = usersResource.search(username);
         if (search.size() == 1) {
             UserRepresentation searchingUser = search.get(0);
 
-            return Mono.just(UserDto.builder()
+            return Mono.just(IndividualDto.builder()
                             .id(searchingUser.getId())
                             .username(searchingUser.getUsername())
                             .firstName(searchingUser.getFirstName())

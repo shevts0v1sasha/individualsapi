@@ -2,7 +2,8 @@ package net.proselyte.individualsapi.rest;
 
 import lombok.RequiredArgsConstructor;
 import net.proselyte.individualsapi.dto.*;
-import net.proselyte.individualsapi.service.KeycloakService;
+import net.proselyte.individualsapi.entity.AddressEntity;
+import net.proselyte.individualsapi.service.AuthService;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -11,20 +12,39 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AuthRestControllerV1 {
 
-    private final KeycloakService keycloakService;
+    private final AuthService authService;
 
-    @PostMapping("/register")
-    public Mono<UserDto> registerUser(@RequestBody CreateUserRequest request) {
-        return keycloakService.register(request);
+    @PostMapping("/individuals/register")
+    public Mono<IndividualDto> registerIndividual(@RequestBody IndividualDto individual) {
+        return authService.registerIndividual(individual)
+                .map(individualEntity -> {
+                    AddressEntity address = individualEntity.getUser().getAddressEntity();
+                    return IndividualDto.builder()
+                            .id(individualEntity.getId().toString())
+                            .username(individualEntity.getUser().getUsername())
+                            .firstName(individualEntity.getUser().getFirstName())
+                            .lastName(individualEntity.getUser().getLastName())
+                            .email(individualEntity.getEmail())
+                            .passportNumber(individualEntity.getPassportNumber())
+                            .phoneNumber(individualEntity.getPhoneNumber())
+                            .address(new AddressDto(
+                                    address.getCountry().getName(),
+                                    address.getAddress(),
+                                    address.getState(),
+                                    address.getCity(),
+                                    address.getZipCode()))
+                            .build();
+                });
+
     }
 
-    @PostMapping("/login")
+    @PostMapping("/individuals/login")
     public Mono<KeycloakLoginResponse> login(@RequestBody AuthRequest request) {
-        return keycloakService.login(request);
+        return authService.login(request);
     }
-
-    @GetMapping("/{username}")
-    public Mono<UserDto> getUserByUsername(@PathVariable String username) {
-        return keycloakService.getUserByUsername(username);
-    }
+//
+//    @GetMapping("/{username}")
+//    public Mono<UserDto> getUserByUsername(@PathVariable String username) {
+//        return keycloakService.getUserByUsername(username);
+//    }
 }
