@@ -22,7 +22,7 @@ public class AuthService {
 
 
     public Mono<KeycloakLoginResponse> login(AuthRequest request) {
-        return personService.findUserByUsername(request.getUsername())
+        return personService.findUserByUsername(request.getUsername().toLowerCase())
                 .switchIfEmpty(Mono.error(new UsernameNotFoundException("Username not found")))
                 .flatMap(user -> keycloakService.login(request));
     }

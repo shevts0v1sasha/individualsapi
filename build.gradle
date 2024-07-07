@@ -19,7 +19,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.keycloak:keycloak-admin-client:24.0.4'
+	implementation 'org.keycloak:keycloak-admin-client:25.0.1'
 	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
 	implementation group: 'org.postgresql', name: 'r2dbc-postgresql', version: '1.0.5.RELEASE'
 	implementation "org.postgresql:postgresql:$postgreSqlVersion"

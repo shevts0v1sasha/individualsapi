@@ -47,4 +47,8 @@ public class AddressService {
                     return objects.getT1();
                 });
     }
+
+    public Mono<AddressEntity> update(AddressEntity addressEntity) {
+        return addressRepository.save(addressEntity);
+    }
 }

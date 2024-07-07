@@ -1,7 +1,6 @@
 package net.proselyte.individualsapi.config;
 
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -64,6 +63,7 @@ public class JwtAuthConverter implements Converter<Jwt, Mono<? extends AbstractA
                 jwtGrantedAuthoritiesConverter.convert(jwt).stream(),
                 extractResourceRoles(jwt).stream()
         ).collect(Collectors.toSet());
-        return Mono.just(new JwtAuthenticationToken(jwt, grantedAuthorities, getPrincipleClaimName(jwt)));
+        JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, grantedAuthorities, getPrincipleClaimName(jwt));
+        return Mono.just(jwtAuthenticationToken);
     }
 }

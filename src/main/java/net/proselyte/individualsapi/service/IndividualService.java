@@ -2,14 +2,20 @@ package net.proselyte.individualsapi.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.proselyte.individualsapi.dto.AddressDto;
 import net.proselyte.individualsapi.dto.IndividualDto;
+import net.proselyte.individualsapi.entity.AddressEntity;
 import net.proselyte.individualsapi.entity.CountryEntity;
 import net.proselyte.individualsapi.entity.IndividualEntity;
+import net.proselyte.individualsapi.entity.UserEntity;
 import net.proselyte.individualsapi.exception.CountryNotFoundException;
 import net.proselyte.individualsapi.repository.IndividualRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +37,7 @@ public class IndividualService {
         String firstName = individualDto.getFirstName();
         String lastName = individualDto.getLastName();
         String password = individualDto.getPassword();
-        String username = individualDto.getUsername();
+        String username = individualDto.getUsername().toLowerCase(); // because keycloak doesn't support upper case letters
         String email = individualDto.getEmail();
 
         Mono<CountryEntity> country = countryService.findCountryByName(individualDto.getAddress().country());
@@ -51,36 +57,51 @@ public class IndividualService {
                                             .flatMap(individualEntity -> Mono.zip(Mono.just(individualEntity), profileHistoryService.addNewProfileHistory(individualEntity)))
                                             .flatMap(zip -> Mono.just(zip.getT1()));
                                 })));
-
-
-        // find country
-        // find or create address
-        // create user
-            // create user in keycloak
-        // add new profile history
-        // create individual
-        // return
-
     }
 
-    public Mono<IndividualEntity> findById(String id) {
-        // find by id in repository
-        // find user
-        // find address
-        // build dto and return
-        return Mono.empty();
+    @Transactional
+    public Mono<IndividualEntity> update(IndividualDto individualDto) {
+        LocalDateTime updateTime = LocalDateTime.now();
+        return findById(UUID.fromString(individualDto.getId()))
+                .flatMap(individualEntity -> {
+                    UserEntity user = individualEntity.getUser();
+                    user.setFirstName(individualDto.getFirstName());
+                    user.setLastName(individualDto.getLastName());
+                    user.setUpdated(updateTime);
+                    individualEntity.setPhoneNumber(individualDto.getPhoneNumber());
+                    individualEntity.setPassportNumber(individualDto.getPassportNumber());
+                    AddressDto addressDto = individualDto.getAddress();
+                    AddressEntity address = user.getAddressEntity();
+                    address.setAddress(addressDto.address());
+                    address.setUpdated(updateTime);
+                    address.setZipCode(addressDto.zipCode());
+                    address.setCity(addressDto.city());
+                    address.setState(addressDto.state());
+
+                    return userService.update(user)
+                            .flatMap(updatedUser -> individualRepository.save(individualEntity));
+                });
     }
 
-    public Mono<IndividualEntity> update() {
-        // begin transactoin
-        // find by id in repository
-        // find user
-        // find address
-        // update individual
-        // update user
-        // update address
-        // add new row in profile history
-        // commit transaction
-        return Mono.empty();
+    public Mono<IndividualEntity> findByUsername(String username) {
+        return userService.findByUsername(username)
+                .flatMap(userEntity -> Mono.zip(Mono.just(userEntity), individualRepository.findByUserId(userEntity.getId())))
+                .map(objects -> {
+                    objects.getT2().setUser(objects.getT1());
+                    return objects.getT2();
+                });
+    }
+
+    public Mono<IndividualEntity> findById(UUID id) {
+        return completeIndividualWithUserEntity(individualRepository.findById(id));
+    }
+
+    private Mono<IndividualEntity> completeIndividualWithUserEntity(Mono<IndividualEntity> individualEntityMono) {
+        return individualEntityMono
+                .flatMap(individualEntity -> Mono.zip(Mono.just(individualEntity), userService.findById(individualEntity.getUserId())))
+                .map(objects -> {
+                    objects.getT1().setUser(objects.getT2());
+                    return objects.getT1();
+                });
     }
 }

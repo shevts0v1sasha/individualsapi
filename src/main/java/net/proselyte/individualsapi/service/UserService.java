@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class UserService {
     public Mono<UserEntity> create(String username, String password, String firstName, String lastName, String email, AddressEntity addressEntity) {
         LocalDateTime now = LocalDateTime.now();
         UserEntity newUser = UserEntity.builder()
-                .secretKey("secret")
+                .secretKey(UUID.randomUUID().toString())
                 .username(username)
                 .created(now)
                 .updated(now)
@@ -42,7 +43,20 @@ public class UserService {
     }
 
     public Mono<UserEntity> findByUsername(String username) {
-        return userRepository.findByUsername(username)
+        return completeUserEntityWithAddressEntity(userRepository.findByUsername(username));
+    }
+
+    public Mono<UserEntity> update(UserEntity user) {
+        return addressService.update(user.getAddressEntity())
+                .flatMap(addressEntity -> userRepository.save(user));
+    }
+
+    public Mono<UserEntity> findById(UUID userId) {
+        return completeUserEntityWithAddressEntity(userRepository.findById(userId));
+    }
+
+    private Mono<UserEntity> completeUserEntityWithAddressEntity(Mono<UserEntity> userEntityMono) {
+        return userEntityMono
                 .flatMap(userEntity -> Mono.zip(Mono.just(userEntity),
                                 addressService.findById(userEntity.getAddressId()))
                         .map(objects -> {

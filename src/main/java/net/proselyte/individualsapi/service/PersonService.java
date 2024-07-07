@@ -18,14 +18,12 @@ public class PersonService {
         return individualService.create(individual);
     }
 
-    public Mono<IndividualEntity> getMyIndividual() {
-        // obtain token
-        String id = "";
-        return individualService.findById(id);
+    public Mono<IndividualEntity> getMyIndividual(String username) {
+        return individualService.findByUsername(username);
     }
 
-    public Mono<IndividualEntity> updateIndividual() {
-        return individualService.update();
+    public Mono<IndividualEntity> updateIndividual(IndividualDto individual) {
+        return individualService.update(individual);
     }
 
     public Mono<UserEntity> findUserByUsername(String username) {
