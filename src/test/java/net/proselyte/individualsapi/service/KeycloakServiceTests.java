@@ -2,9 +2,8 @@ package net.proselyte.individualsapi.service;
 
 import net.proselyte.individualsapi.config.KeycloakConfig;
 import net.proselyte.individualsapi.dto.AuthRequest;
-import net.proselyte.individualsapi.dto.CreateUserRequest;
+import net.proselyte.individualsapi.dto.IndividualDto;
 import net.proselyte.individualsapi.dto.KeycloakLoginResponse;
-import net.proselyte.individualsapi.dto.UserDto;
 import net.proselyte.individualsapi.exception.KeycloakBadRequestException;
 import net.proselyte.individualsapi.exception.KeycloakUserNotFoundException;
 import net.proselyte.individualsapi.exception.NotAuthorizedException;
@@ -63,10 +62,9 @@ public class KeycloakServiceTests {
                 .willReturn(DataUtils.getResponse(HttpStatus.CREATED));
         BDDMockito.given(usersResource.search(anyString()))
                 .willReturn(List.of(DataUtils.getUserRepresentation(UUID.randomUUID().toString(), username, firstName, lastName, email)));
-        CreateUserRequest request = new CreateUserRequest(username, password, firstName, lastName, email);
 
         //when
-        UserDto register = keycloakService.register(request).block();
+        IndividualDto register = keycloakService.register(username, password, firstName, lastName, email).block();
 
         //then
         assertThat(register.getUsername()).isEqualTo(username);
@@ -85,10 +83,9 @@ public class KeycloakServiceTests {
         String email = "hero@gmail.com";
         BDDMockito.given(usersResource.create(any(UserRepresentation.class)))
                 .willReturn(DataUtils.getResponse(HttpStatus.BAD_REQUEST));
-        CreateUserRequest request = new CreateUserRequest(username, password, firstName, lastName, email);
 
         //when
-        assertThrows(KeycloakBadRequestException.class, () -> keycloakService.register(request).block());
+        assertThrows(KeycloakBadRequestException.class, () -> keycloakService.register(username, password, firstName, lastName, email).block());
 
         //then
         verify(usersResource, never()).search(anyString());
@@ -112,13 +109,13 @@ public class KeycloakServiceTests {
                         )));
 
         //when
-        UserDto user = keycloakService.getUserByUsername(username).block();
+        IndividualDto individualDto = keycloakService.getUserByUsername(username).block();
 
         //then
-        assertThat(user.getUsername()).isEqualTo(username);
-        assertThat(user.getFirstName()).isEqualTo(firstName);
-        assertThat(user.getLastName()).isEqualTo(lastName);
-        assertThat(user.getEmail()).isEqualTo(email);
+        assertThat(individualDto.getUsername()).isEqualTo(username);
+        assertThat(individualDto.getFirstName()).isEqualTo(firstName);
+        assertThat(individualDto.getLastName()).isEqualTo(lastName);
+        assertThat(individualDto.getEmail()).isEqualTo(email);
     }
 
     @Test

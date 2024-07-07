@@ -70,6 +70,7 @@ public class KeycloakService {
 
                 return getUserByUsername(username);
             } else {
+                log.error("Couldn't create user in keycloak. Keycloak response status: {}", response.getStatus());
                 KeycloakErrorDto keycloakErrorDto = response.readEntity(KeycloakErrorDto.class);
                 throw new KeycloakBadRequestException(keycloakErrorDto.errorMessage());
             }

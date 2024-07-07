@@ -17,15 +17,13 @@ public class SecurityConfig {
     private final JwtAuthConverter jwtAuthConverter;
     private final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/individuals/register",
-            "/api/v1/auth/individuals/login",
-            "/api/v1/auth/login"
+            "/api/v1/auth/individuals/login"
     };
 
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
         http.authorizeExchange(exchange -> exchange.pathMatchers(PUBLIC_ENDPOINTS).permitAll()
                 .pathMatchers("/api/v1/persons/individuals/info").hasAuthority("ROLE_client_user")
-                .pathMatchers("/api/v1/auth").hasAuthority("ROLE_client_admin")
                 .anyExchange().authenticated());
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);
 

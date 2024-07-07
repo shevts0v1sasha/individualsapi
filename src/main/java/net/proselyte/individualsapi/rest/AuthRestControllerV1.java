@@ -42,9 +42,4 @@ public class AuthRestControllerV1 {
     public Mono<KeycloakLoginResponse> login(@RequestBody AuthRequest request) {
         return authService.login(request);
     }
-//
-//    @GetMapping("/{username}")
-//    public Mono<UserDto> getUserByUsername(@PathVariable String username) {
-//        return keycloakService.getUserByUsername(username);
-//    }
 }

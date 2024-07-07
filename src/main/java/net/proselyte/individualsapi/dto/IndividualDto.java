@@ -13,7 +13,7 @@ public class IndividualDto {
 
     private String id;
     private String username;
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String firstName;
     private String lastName;
