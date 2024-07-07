@@ -39,7 +39,7 @@ public class AuthRestControllerV1 {
     }
 
     @PostMapping("/individuals/login")
-    public Mono<KeycloakLoginResponse> login(@RequestBody AuthRequest request) {
+    public Mono<LoginResponse> login(@RequestBody AuthRequest request) {
         return authService.login(request);
     }
 }

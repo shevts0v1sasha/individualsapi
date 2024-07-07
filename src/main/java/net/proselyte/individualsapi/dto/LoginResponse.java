@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class KeycloakLoginResponse {
+public class LoginResponse {
 
     private String accessToken;
     private int expiresIn;

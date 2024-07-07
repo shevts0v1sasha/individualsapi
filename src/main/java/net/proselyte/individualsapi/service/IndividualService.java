@@ -23,6 +23,7 @@ import java.util.UUID;
 public class IndividualService {
 
     private final UserService userService;
+    private final KeycloakService keycloakService;
     private final AddressService addressService;
     private final ProfileHistoryService profileHistoryService;
     private final CountryService countryService;
@@ -44,8 +45,10 @@ public class IndividualService {
         return country
                 .switchIfEmpty(Mono.error(new CountryNotFoundException("Couldn't find country with name: %s".formatted(individualDto.getAddress().country()))))
                 .flatMap(countryEntity -> addressService.create(countryEntity, address, city, state, zipCode)
-                        .flatMap(addressEntity -> userService.create(username, password, firstName, lastName, email, addressEntity)
-                                .flatMap(userEntity -> {
+                        .flatMap(addressEntity -> Mono.zip(userService.create(username, firstName, lastName, email, addressEntity),
+                                        keycloakService.register(username, password, firstName, lastName, email))
+                                .flatMap(objects -> {
+                                    UserEntity userEntity = objects.getT1();
                                     IndividualEntity individual = IndividualEntity.builder()
                                             .userId(userEntity.getId())
                                             .user(userEntity)
@@ -79,6 +82,7 @@ public class IndividualService {
                     address.setState(addressDto.state());
 
                     return userService.update(user)
+                            .flatMap(userEntity -> keycloakService.updateUser(individualDto.getUsername(), individualDto.getFirstName(), individualDto.getLastName(), individualDto.getEmail()))
                             .flatMap(updatedUser -> individualRepository.save(individualEntity));
                 });
     }

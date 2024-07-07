@@ -9,13 +9,12 @@ import net.proselyte.individualsapi.exception.KeycloakBadRequestException;
 import net.proselyte.individualsapi.exception.KeycloakUserNotFoundException;
 import net.proselyte.individualsapi.exception.NotAuthorizedException;
 import org.keycloak.admin.client.CreatedResponseUtil;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.userprofile.config.UPConfig;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -36,9 +34,9 @@ public class KeycloakService {
 
     private final KeycloakConfig keycloakConfig;
     private final UsersResource usersResource;
-    private final Keycloak keycloak;
+    private final ClientsResource clientsResource;
 
-    public Mono<IndividualDto> register(String username, String password, String firstName, String lastName, String email) {
+    public Mono<KeycloakUserDto> register(String username, String password, String firstName, String lastName, String email) {
         CredentialRepresentation credential = createPasswordCredentials(password);
 
         UserRepresentation user = new UserRepresentation();
@@ -55,18 +53,15 @@ public class KeycloakService {
 
                 String createdId = CreatedResponseUtil.getCreatedId(response);
 
-                keycloak.realm("hypercore")
-                        .clients()
+                ClientRepresentation clientRepresentation = clientsResource
                         .findByClientId("hypercore")
-                        .forEach(clientRepresentation -> {
-                            RoleRepresentation representation = keycloak.realm("hypercore").clients()
-                                    .get(clientRepresentation.getId()).roles().get("client_user").toRepresentation();
-                            keycloak.realm("hypercore")
-                                    .users()
-                                    .get(createdId)
-                                    .roles().clientLevel(clientRepresentation.getId())
-                                    .add(List.of(representation));
-                        });
+                        .getFirst();
+                RoleRepresentation representation = clientsResource
+                        .get(clientRepresentation.getId()).roles().get("client_user").toRepresentation();
+                usersResource
+                        .get(createdId)
+                        .roles().clientLevel(clientRepresentation.getId())
+                        .add(List.of(representation));
 
                 return getUserByUsername(username);
             } else {
@@ -77,7 +72,7 @@ public class KeycloakService {
         }
     }
 
-    public Mono<KeycloakLoginResponse> login(AuthRequest request) {
+    public Mono<LoginResponse> login(AuthRequest request) {
         return webClient.post()
                 .uri("%s/realms/hypercore/protocol/openid-connect/token".formatted(keycloakConfig.getServerUrl()))
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -87,29 +82,48 @@ public class KeycloakService {
                         .with("client_id", keycloakConfig.getClientId())
                         .with("client_secret", keycloakConfig.getClientSecret()))
                 .exchangeToMono(clientResponse -> {
-                    System.out.println(clientResponse.statusCode());
                     if (clientResponse.statusCode().value() == HttpStatus.OK.value()) {
-                        return clientResponse.bodyToMono(KeycloakLoginResponse.class);
+                        return clientResponse.bodyToMono(LoginResponse.class);
                     } else {
                         return Mono.error(new NotAuthorizedException("Wrong username or password"));
                     }
                 });
     }
 
-    public Mono<IndividualDto> getUserByUsername(String username) {
+    public Mono<KeycloakUserDto> getUserByUsername(String username) {
         List<UserRepresentation> search = usersResource.search(username);
+
         if (search.size() == 1) {
             UserRepresentation searchingUser = search.getFirst();
-
-            return Mono.just(IndividualDto.builder()
-                            .id(searchingUser.getId())
-                            .username(searchingUser.getUsername())
-                            .firstName(searchingUser.getFirstName())
-                            .lastName(searchingUser.getLastName())
-                            .email(searchingUser.getEmail())
-                    .build());
+            return userRepresentationToKeycloakUserDto(searchingUser);
         }
         throw new KeycloakUserNotFoundException("User with username=%s not found".formatted(username));
+    }
+
+    public Mono<KeycloakUserDto> updateUser(String username, String firstName, String lastName, String email) {
+        List<UserRepresentation> search = usersResource.search(username);
+
+        if (search.size() == 1) {
+            UserRepresentation userRepresentation = search.getFirst();
+            userRepresentation.setFirstName(firstName);
+            userRepresentation.setLastName(lastName);
+            userRepresentation.setEmail(email);
+            usersResource.get(userRepresentation.getId())
+                    .update(userRepresentation);
+
+            return userRepresentationToKeycloakUserDto(userRepresentation);
+        }
+        throw new KeycloakUserNotFoundException("User with username=%s not found".formatted(username));
+    }
+
+    private Mono<KeycloakUserDto> userRepresentationToKeycloakUserDto(UserRepresentation userRepresentation) {
+        return Mono.just(KeycloakUserDto.builder()
+                .id(userRepresentation.getId())
+                .username(userRepresentation.getUsername())
+                .firstName(userRepresentation.getFirstName())
+                .lastName(userRepresentation.getLastName())
+                .email(userRepresentation.getEmail())
+                .build());
     }
 
     private CredentialRepresentation createPasswordCredentials(String password) {

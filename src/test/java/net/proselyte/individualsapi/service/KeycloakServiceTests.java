@@ -2,8 +2,8 @@ package net.proselyte.individualsapi.service;
 
 import net.proselyte.individualsapi.config.KeycloakConfig;
 import net.proselyte.individualsapi.dto.AuthRequest;
-import net.proselyte.individualsapi.dto.IndividualDto;
-import net.proselyte.individualsapi.dto.KeycloakLoginResponse;
+import net.proselyte.individualsapi.dto.KeycloakUserDto;
+import net.proselyte.individualsapi.dto.LoginResponse;
 import net.proselyte.individualsapi.exception.KeycloakBadRequestException;
 import net.proselyte.individualsapi.exception.KeycloakUserNotFoundException;
 import net.proselyte.individualsapi.exception.NotAuthorizedException;
@@ -11,7 +11,9 @@ import net.proselyte.individualsapi.utils.DataUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.admin.client.resource.*;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
@@ -37,6 +39,27 @@ public class KeycloakServiceTests {
 
     @Mock
     private UsersResource usersResource;
+
+    @Mock
+    private UserResource userResource;
+    @Mock
+    private RoleMappingResource roleMappingResource;
+    @Mock
+    private RoleScopeResource roleScopeResource;
+
+    @Mock
+    private ClientsResource clientsResource;
+
+    @Mock
+    private ClientRepresentation clientRepresentation;
+    @Mock
+    private ClientResource clientResource;
+    @Mock
+    private RolesResource rolesResource;
+    @Mock
+    private RoleResource roleResource;
+    @Mock
+    private RoleRepresentation roleRepresentation;
     @Mock
     private WebClient webClient;
     @Mock
@@ -63,13 +86,32 @@ public class KeycloakServiceTests {
         BDDMockito.given(usersResource.search(anyString()))
                 .willReturn(List.of(DataUtils.getUserRepresentation(UUID.randomUUID().toString(), username, firstName, lastName, email)));
 
+        BDDMockito.given(clientsResource.findByClientId(anyString()))
+                .willReturn(List.of(clientRepresentation));
+
+        BDDMockito.given(clientsResource.get(anyString()))
+                .willReturn(clientResource);
+        BDDMockito.given(clientResource.roles())
+                .willReturn(rolesResource);
+        BDDMockito.given(rolesResource.get(anyString()))
+                .willReturn(roleResource);
+        BDDMockito.given(roleResource.toRepresentation())
+                .willReturn(roleRepresentation);
+
+        BDDMockito.given(usersResource.get(anyString()))
+                .willReturn(userResource);
+        BDDMockito.given(userResource.roles())
+                .willReturn(roleMappingResource);
+        BDDMockito.given(roleMappingResource.clientLevel(anyString()))
+                .willReturn(roleScopeResource);
+
         //when
-        IndividualDto register = keycloakService.register(username, password, firstName, lastName, email).block();
+        KeycloakUserDto keycloakUserDto = keycloakService.register(username, password, firstName, lastName, email).block();
 
         //then
-        assertThat(register.getUsername()).isEqualTo(username);
-        assertThat(register.getFirstName()).isEqualTo(firstName);
-        assertThat(register.getLastName()).isEqualTo(lastName);
+        assertThat(keycloakUserDto.getUsername()).isEqualTo(username);
+        assertThat(keycloakUserDto.getFirstName()).isEqualTo(firstName);
+        assertThat(keycloakUserDto.getLastName()).isEqualTo(lastName);
     }
 
     @Test
@@ -109,13 +151,13 @@ public class KeycloakServiceTests {
                         )));
 
         //when
-        IndividualDto individualDto = keycloakService.getUserByUsername(username).block();
+        KeycloakUserDto keycloakUserDto = keycloakService.getUserByUsername(username).block();
 
         //then
-        assertThat(individualDto.getUsername()).isEqualTo(username);
-        assertThat(individualDto.getFirstName()).isEqualTo(firstName);
-        assertThat(individualDto.getLastName()).isEqualTo(lastName);
-        assertThat(individualDto.getEmail()).isEqualTo(email);
+        assertThat(keycloakUserDto.getUsername()).isEqualTo(username);
+        assertThat(keycloakUserDto.getFirstName()).isEqualTo(firstName);
+        assertThat(keycloakUserDto.getLastName()).isEqualTo(lastName);
+        assertThat(keycloakUserDto.getEmail()).isEqualTo(email);
     }
 
     @Test
@@ -144,13 +186,13 @@ public class KeycloakServiceTests {
         BDDMockito.given(requestBodyUriSpec.body(any()))
                 .willReturn(requestHeadersSpec);
         BDDMockito.given(requestHeadersSpec.exchangeToMono(any()))
-                .willReturn(Mono.just(new KeycloakLoginResponse(
+                .willReturn(Mono.just(new LoginResponse(
                         token, 1000, 1000, token, "Bearer ")));
         BDDMockito.given(keycloakConfig.getServerUrl())
                 .willReturn("");
         AuthRequest authRequest = new AuthRequest("Spider-Man", "secretpass");
         //when
-        KeycloakLoginResponse login = keycloakService.login(authRequest).block();
+        LoginResponse login = keycloakService.login(authRequest).block();
         //then
         assertThat(login.getAccessToken()).isEqualTo(token);
         assertThat(login.getRefreshToken()).isEqualTo(token);

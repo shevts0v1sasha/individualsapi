@@ -3,7 +3,7 @@ package net.proselyte.individualsapi.service;
 import lombok.RequiredArgsConstructor;
 import net.proselyte.individualsapi.dto.AuthRequest;
 import net.proselyte.individualsapi.dto.IndividualDto;
-import net.proselyte.individualsapi.dto.KeycloakLoginResponse;
+import net.proselyte.individualsapi.dto.LoginResponse;
 import net.proselyte.individualsapi.entity.IndividualEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ public class AuthService {
     }
 
 
-    public Mono<KeycloakLoginResponse> login(AuthRequest request) {
+    public Mono<LoginResponse> login(AuthRequest request) {
         return personService.findUserByUsername(request.getUsername().toLowerCase())
                 .switchIfEmpty(Mono.error(new UsernameNotFoundException("Username not found")))
                 .flatMap(user -> keycloakService.login(request));

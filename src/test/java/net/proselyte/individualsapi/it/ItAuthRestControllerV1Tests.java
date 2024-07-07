@@ -5,9 +5,8 @@ import net.proselyte.individualsapi.config.PostgreTestcontainerConfig;
 import net.proselyte.individualsapi.dto.AddressDto;
 import net.proselyte.individualsapi.dto.AuthRequest;
 import net.proselyte.individualsapi.dto.IndividualDto;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import net.proselyte.individualsapi.dto.LoginResponse;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,7 +20,8 @@ import reactor.core.publisher.Mono;
 @AutoConfigureWebTestClient(timeout = "PT15M")
 @ActiveProfiles("test")
 @Import(PostgreTestcontainerConfig.class)
-@TestInstance(TestInstance.Lifecycle.PER_METHOD)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ItAuthRestControllerV1Tests {
 
     @Autowired
@@ -32,6 +32,7 @@ public class ItAuthRestControllerV1Tests {
 
     @Test
     @DisplayName("Create user functionality")
+    @Order(1)
     public void givenCreateNonExistentUserRequest_whenRegister_thenUserInKeycloakCreated() {
         //given
         IndividualDto individualDto = IndividualDto.builder()
@@ -61,6 +62,7 @@ public class ItAuthRestControllerV1Tests {
 
     @Test
     @DisplayName("Login functionality")
+    @Order(2)
     public void givenCreatedUsername_whenLogin_thenTokenObtained() {
         //given
         AuthRequest authRequest = new AuthRequest(testUsername, testPassword);
@@ -74,10 +76,37 @@ public class ItAuthRestControllerV1Tests {
 
         response.expectStatus().isOk()
                 .expectBody()
-                .consumeWith(System.out::println)
                 .jsonPath("$.access_token").isNotEmpty()
                 .jsonPath("$.expires_in").isEqualTo(300)
                 .jsonPath("$.refresh_token").isNotEmpty()
                 .jsonPath("$.token_type").isEqualTo("Bearer");
+    }
+
+    @Test
+    @DisplayName("Get individual info by jwt token functionality")
+    @Order(3)
+    public void givenJwtToken_whenGetInfo_thenUserInfoObtained() {
+        //given
+        AuthRequest authRequest = new AuthRequest(testUsername, testPassword);
+        LoginResponse loginResponse = webTestClient.post()
+                .uri("/api/v1/auth/individuals/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just(authRequest), AuthResponse.class)
+                .exchange()
+                .expectStatus().isOk()
+                .returnResult(LoginResponse.class)
+                .getResponseBody().blockFirst();
+
+        //when
+        WebTestClient.ResponseSpec response = webTestClient.get()
+                .uri("/api/v1/persons/individuals/info")
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(loginResponse.getAccessToken()))
+                .exchange();
+
+        //then
+        response.expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.username").isEqualTo(testUsername)
+                .jsonPath("$.firstName").isEqualTo("Ivan");
     }
 }
