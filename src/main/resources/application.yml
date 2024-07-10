@@ -1,10 +1,10 @@
 spring:
   r2dbc:
-    url: r2dbc:pool:postgres://localhost:${POSTGRES_PORT}/postgres
+    url: r2dbc:pool:postgres://localhost:${POSTGRES_PORT:5490}/postgres
     username: postgres
     password: postgres
   flyway:
-    url: jdbc:postgresql://localhost:${POSTGRES_PORT}/postgres
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5490}/postgres
     locations: classpath:db/migration
     user: postgres
     password: postgres
@@ -18,7 +18,7 @@ spring:
         registration:
           keycloak:
             client-id: hypercore
-            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            client-secret: DOoH7QgR067e0znlXwrVg3vgFbEVD9cW
 
 logging:
   level:
