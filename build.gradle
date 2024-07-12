@@ -13,6 +13,7 @@ java {
 
 repositories {
 	mavenCentral()
+	mavenLocal()
 }
 
 dependencies {
@@ -36,6 +37,8 @@ dependencies {
 	testImplementation "org.testcontainers:postgresql:1.19.7"
 	testImplementation 'org.testcontainers:r2dbc'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'com.github.dasniko:testcontainers-keycloak:3.3.1'
+	testImplementation 'com.h2database:h2:2.2.224'
 }
 
 tasks.named('test') {
