@@ -1,9 +1,9 @@
 package net.proselyte.individualsapi.service;
 
 import lombok.RequiredArgsConstructor;
-import net.proselyte.individualsapi.dto.AuthRequest;
-import net.proselyte.individualsapi.dto.IndividualDto;
-import net.proselyte.individualsapi.dto.LoginResponse;
+import net.proselyte.individualsapi.common.dto.AuthRequest;
+import net.proselyte.individualsapi.common.dto.LoginResponse;
+import net.proselyte.individualsapi.common.dto.IndividualDto;
 import net.proselyte.individualsapi.entity.IndividualEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;

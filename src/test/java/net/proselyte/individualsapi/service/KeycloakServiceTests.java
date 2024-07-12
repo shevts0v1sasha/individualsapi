@@ -1,9 +1,9 @@
 package net.proselyte.individualsapi.service;
 
+import net.proselyte.individualsapi.common.dto.AuthRequest;
+import net.proselyte.individualsapi.common.dto.KeycloakUserDto;
+import net.proselyte.individualsapi.common.dto.LoginResponse;
 import net.proselyte.individualsapi.config.KeycloakConfig;
-import net.proselyte.individualsapi.dto.AuthRequest;
-import net.proselyte.individualsapi.dto.KeycloakUserDto;
-import net.proselyte.individualsapi.dto.LoginResponse;
 import net.proselyte.individualsapi.exception.KeycloakBadRequestException;
 import net.proselyte.individualsapi.exception.KeycloakUserNotFoundException;
 import net.proselyte.individualsapi.exception.NotAuthorizedException;

@@ -1,7 +1,7 @@
 package net.proselyte.individualsapi.utils;
 
 import jakarta.ws.rs.core.*;
-import net.proselyte.individualsapi.dto.KeycloakErrorDto;
+import net.proselyte.individualsapi.common.dto.KeycloakErrorDto;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.http.HttpStatus;
 

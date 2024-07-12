@@ -1,11 +1,14 @@
 package net.proselyte.individualsapi.it;
 
 import com.github.dockerjava.api.model.AuthResponse;
+import net.proselyte.individualsapi.common.dto.AddressDto;
+import net.proselyte.individualsapi.common.dto.AuthRequest;
+import net.proselyte.individualsapi.common.dto.IndividualDto;
+import net.proselyte.individualsapi.common.dto.LoginResponse;
 import net.proselyte.individualsapi.config.KeycloakTestContainers;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
@@ -14,8 +17,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Mono;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "spring.main.allow-bean-definition-overriding=true")
-@Testcontainers
 @TestPropertySource(locations = "classpath:application-test.yaml")
+@AutoConfigureWebTestClient(timeout = "PT15M")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Testcontainers
 public class ItAuthRestControllerV1Tests extends KeycloakTestContainers {
 
     @Autowired

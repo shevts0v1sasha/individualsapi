@@ -45,8 +45,8 @@ public abstract class KeycloakTestContainers {
         registry.add("keycloak-service.client.base-admin-url", () -> keycloak.getAuthServerUrl() + "/admin/realms/hypercore");
         registry.add("keycloak.clientId", () -> CLIENT_ID);
         registry.add("keycloak.clientSecret", () -> CLIENT_SECRET);
-        registry.add("keycloak.urls.auth", () -> keycloak.getAuthServerUrl());
-        registry.add("keycloak.server-url", () -> keycloak.getAuthServerUrl());
+        registry.add("keycloak.urls.auth", keycloak::getAuthServerUrl);
+        registry.add("keycloak.server-url", keycloak::getAuthServerUrl);
 
         registry.add("spring.r2dbc.url",
                 () -> "r2dbc:pool:postgres://localhost:%d/postgres".formatted(postgreSQLContainer.getFirstMappedPort()));

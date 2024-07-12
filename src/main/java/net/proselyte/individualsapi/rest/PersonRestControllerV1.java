@@ -1,7 +1,8 @@
 package net.proselyte.individualsapi.rest;
 
 import lombok.RequiredArgsConstructor;
-import net.proselyte.individualsapi.dto.IndividualDto;
+import net.proselyte.individualsapi.common.dto.IndividualDto;
+import net.proselyte.individualsapi.mapper.IndividualMapper;
 import net.proselyte.individualsapi.service.PersonService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -19,12 +20,12 @@ public class PersonRestControllerV1 {
     public Mono<IndividualDto> getMyIndividual(Authentication authentication) {
         JwtAuthenticationToken jwtAuthenticationToken = (JwtAuthenticationToken) authentication;
         return personService.getMyIndividual(jwtAuthenticationToken.getName())
-                .map(IndividualDto::fromJpaEntity);
+                .map(IndividualMapper::fromJpaEntity);
     }
 
     @PatchMapping("/individuals")
     public Mono<IndividualDto> updateIndividual(@RequestBody IndividualDto individual) {
         return personService.updateIndividual(individual)
-                .map(IndividualDto::fromJpaEntity);
+                .map(IndividualMapper::fromJpaEntity);
     }
 }

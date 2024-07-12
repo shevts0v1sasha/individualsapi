@@ -1,7 +1,10 @@
 package net.proselyte.individualsapi.rest;
 
 import lombok.RequiredArgsConstructor;
-import net.proselyte.individualsapi.dto.*;
+import net.proselyte.individualsapi.common.dto.AddressDto;
+import net.proselyte.individualsapi.common.dto.AuthRequest;
+import net.proselyte.individualsapi.common.dto.IndividualDto;
+import net.proselyte.individualsapi.common.dto.LoginResponse;
 import net.proselyte.individualsapi.entity.AddressEntity;
 import net.proselyte.individualsapi.service.AuthService;
 import org.springframework.web.bind.annotation.*;

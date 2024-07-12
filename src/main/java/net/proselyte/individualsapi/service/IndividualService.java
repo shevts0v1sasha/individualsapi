@@ -2,8 +2,8 @@ package net.proselyte.individualsapi.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.proselyte.individualsapi.dto.AddressDto;
-import net.proselyte.individualsapi.dto.IndividualDto;
+import net.proselyte.individualsapi.common.dto.AddressDto;
+import net.proselyte.individualsapi.common.dto.IndividualDto;
 import net.proselyte.individualsapi.entity.AddressEntity;
 import net.proselyte.individualsapi.entity.CountryEntity;
 import net.proselyte.individualsapi.entity.IndividualEntity;

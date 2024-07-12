@@ -1,7 +1,7 @@
 package net.proselyte.individualsapi.service;
 
 import lombok.RequiredArgsConstructor;
-import net.proselyte.individualsapi.dto.IndividualDto;
+import net.proselyte.individualsapi.common.dto.IndividualDto;
 import net.proselyte.individualsapi.entity.IndividualEntity;
 import net.proselyte.individualsapi.entity.UserEntity;
 import org.springframework.stereotype.Service;
